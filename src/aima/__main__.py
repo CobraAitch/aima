@@ -1,0 +1,2 @@
+print("AIMA running")
+

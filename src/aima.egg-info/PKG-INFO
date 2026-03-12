@@ -1,0 +1,26 @@
+Metadata-Version: 2.4
+Name: aima
+Version: 0.1.0
+Summary: AI-powered Multi-Agent Marketing Automation Framework
+Requires-Python: >=3.12
+Requires-Dist: langgraph
+Requires-Dist: langchain
+Requires-Dist: langchain-ollama
+Requires-Dist: pydantic-settings
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: sqlalchemy[asyncio]
+Requires-Dist: asyncpg
+Requires-Dist: alembic
+Requires-Dist: typer
+Requires-Dist: rich
+Provides-Extra: dev
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-asyncio; extra == "dev"
+Requires-Dist: httpx; extra == "dev"
+Provides-Extra: openai
+Requires-Dist: langchain-openai; extra == "openai"
+Provides-Extra: anthropic
+Requires-Dist: langchain-anthropic; extra == "anthropic"

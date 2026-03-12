@@ -1,0 +1,38 @@
+[project]
+name = "aima"
+version = "0.1.0"
+description = "AI-powered Multi-Agent Marketing Automation Framework"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph",
+    "langchain",
+    "langchain-ollama",
+    "pydantic-settings",
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy[asyncio]",
+    "asyncpg",
+    "alembic",
+    "typer",
+    "rich",
+]
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy", "pytest", "pytest-asyncio", "httpx"]
+openai = ["langchain-openai"]
+anthropic = ["langchain-anthropic"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
