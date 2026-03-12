@@ -1,27 +1,41 @@
-from langgraph.graph import StateGraph, START, END
-from typing import TypedDict
-from langchain_ollama import ChatOllama
+from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 
-class PlannerState(TypedDict):
-    goal: str
-    plan: str
+from aima.agents.state import CampaignState
+from aima.llm.factory import create_llm
+from aima.models.campaign import CampaignPlan
 
-def generate_plan(state: PlannerState) -> PlannerState:
-    llm = ChatOllama(model="llama3.1:8b")
-    response = llm.invoke(
-        f"You are a marketing strategist. Create a campaign plan for: {state['goal']}. "
-        f"Include target audience, channels, key messages, and timeline."
+SYSTEM_PROMPT = """You are a senior marketing strategist.
+Given a campaign brief, create a detailed campaign plan.
+Be specific about audience segments, channels, and timeline."""
+
+def plan_campaign(state: CampaignState) -> dict:
+    """Campaign planner agent node.
+
+    Reads the brief from state, generates a structured campaign plan,
+    and writes it back to state.
+
+    This is a LangGraph node function - it receives the full graph state
+    and returns a partial state update (only the fields it changes).
+    See: https://langchain-ai.github.io/langgraph/concepts/low_level/#nodes
+    """
+    llm = create_llm(temperature=0.7)
+    structured_llm = llm.with_structured_output(CampaignPlan)
+
+    brief = state.brief
+    prompt = (
+        f"Product: {brief.product}\n"
+        f"Goal: {brief.goal}\n"
+        f"Market: {brief.market}\n"
+        f"Budget: {brief.budget or 'Not specified'}\n"
     )
-    return {"goal": state["goal"], "plan": response.content}
 
-graph = StateGraph(PlannerState)
-graph.add_node("generate_plan", generate_plan)
-graph.add_edge(START, "generate_plan")
-graph.add_edge("generate_plan", END)
+    plan = structured_llm.invoke([
+        SystemMessage(content=SYSTEM_PROMPT),
+        HumanMessage(content=prompt),
+    ])
 
-app = graph.compile()
-
-if __name__ == "__main__":
-    result = app.invoke({"goal": "Launch BMW M3 social media campaign", "plan": ""})
-    print(result["plan"])
-
+    return {
+        "plan": plan,
+        "status": "planned",
+        "messages": [AIMessage(content=f"Campaign plan created: {plan.campaign_name}")]
+    }
