@@ -30,5 +30,12 @@ def create_llm(
                 max_tokens=max_tokens,
                 max_retries=2,
             )
+        case "github":
+            from langchain_openai import ChatOpenAI
+            return ChatOpenAI(
+                model=settings.llm_model,
+                base_url="https://models.github.ai/inference",
+                api_key=settings.github_token,
+            )
         case _:
             raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
