@@ -29,6 +29,13 @@ def plan_campaign(state: CampaignState) -> dict:
         f"Budget: {brief.budget or 'Not specified'}\n"
     )
 
+    if state.research:
+        prompt += f"Market Research:\n{state.research}\n\n"
+    if state.strategy:
+        prompt += f"Marketing Strategy:\n{state.strategy}\n\n"
+
+    prompt += "Create a detailed campaign plan based on all available data."
+
     plan = structured_llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(content=prompt),

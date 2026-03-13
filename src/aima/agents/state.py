@@ -10,6 +10,7 @@ class CampaignState(BaseModel):
     messages: Annotated[list[BaseMessage], add_messages]
     brief: CampaignBrief
     research: str = ""
+    strategy: str = ""
     plan: CampaignPlan | None = None
     content: list[str] = []
     status: str = "pending"

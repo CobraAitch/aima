@@ -21,7 +21,7 @@ class CampaignBrief(BaseModel):
 class CampaignPlan(BaseModel):
     campaign_name: str
     summary: str
-    audience_segments: list[AudienceSegment]
-    channels: list[ChannelStrategy]
-    key_messages: list[str]
-    timeline_weeks: int
+    audience_segments: list[AudienceSegment] = []
+    channels: list[ChannelStrategy] = []
+    key_messages: list[str] = []
+    timeline_weeks: int = 8
