@@ -18,8 +18,14 @@ def main() -> None:
     print(f"Audience:   {len(plan.audience_segments)} segments")
     print(f"Channels:   {len(plan.channels)} channels")
     print(f"Timeline:   {plan.timeline_weeks} weeks")
-    print(f"{'='*60}\n")
+    print(f"{'='*60}")
 
+    if result.get("content"):
+        print(f"\nGenerated Content:")
+        for i, post in enumerate(result["content"], 1):
+            print(f"  [{i}] {post[:100]}...")
+
+    print(f"\nAgent Log:")
     for msg in result["messages"]:
         print(f"    -> {msg.content}")
 
