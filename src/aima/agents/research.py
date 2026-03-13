@@ -1,39 +1,45 @@
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+from langchain.agents import create_agent
+from langchain_core.messages import AIMessage, HumanMessage
 
-from aima.agents.campaign_planner import SYSTEM_PROMPT
 from aima.agents.state import CampaignState
 from aima.llm.factory import create_llm
-from aima.models.research import MarketResearch
+from aima.tools.web_search import search_web
 
-SYSTEM_PROMPT = """You are a market research analyst.
-Analyze the market for the given product and provide structured research
-including competitors, trends, demographics, and opportunities.
-Be specific and data-driven in your analysis."""
+SYSTEM_PROMPT = """You are a market research analyst with access to web search.
+Use the search tool to find real data about the product, competitors,
+market trends, and target demographics.
+Search at least 2-3 times to gather comprehensive data.
+Then synthesize your findings into a structured research report."""
+
 
 def research_market(state: CampaignState) -> dict:
-    """Research agent node.
+    """Research agent node with web search capability.
 
-    Analyzes the market based on the campaign brief and writes
-    structured research data to state for downstream agents.
+    Uses the agent pattern - the agent decides when to search
+    and when it has enough data to write the report.
     """
     llm = create_llm(temperature=0.3)
-    structured_llm = llm.with_structured_output(MarketResearch)
 
     brief = state.brief
     prompt = (
-        f"Product: {brief.product}\n"
+        f"Research the market for: {brief.product}\n"
         f"Goal: {brief.goal}\n"
-        f"Market: {brief.market}\n"
-        f"Provide detailed market research for this product."
+        f"Market: {brief.market}\n\n"
+        f"Search for competitor analysis, market trends, and target demographics.\n"
+        f"Provide a comprehensive research summary."
     )
 
-    research = structured_llm.invoke([
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=prompt),
-    ])
+    agent = create_agent(llm, tools=[search_web], system_prompt=SYSTEM_PROMPT)
+    result = agent.invoke({
+        "messages": [
+            HumanMessage(content=prompt),
+        ]
+    })
+
+    final_message = result["messages"][-1].content
 
     return {
-        "research": research.model_dump_json(),
+        "research": final_message,
         "status": "researched",
-        "messages": [AIMessage(content=f"Research complete: {len(research.competitors)} competitors analyzed")],
+        "messages": [AIMessage(content="Research complete with live web data")],
     }

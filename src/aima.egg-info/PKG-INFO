@@ -3,10 +3,13 @@ Name: aima
 Version: 0.1.0
 Summary: AI-powered Multi-Agent Marketing Automation Framework
 Requires-Python: >=3.12
-Requires-Dist: langgraph
-Requires-Dist: langchain
-Requires-Dist: langchain-ollama
-Requires-Dist: pydantic-settings
+Requires-Dist: langgraph>=1.1
+Requires-Dist: langchain>=1.2
+Requires-Dist: langchain-core>=1.2
+Requires-Dist: langchain-community>=0.4
+Requires-Dist: langchain-ollama>=1.0
+Requires-Dist: ddgs>=9.0
+Requires-Dist: pydantic-settings>=2.13
 Requires-Dist: fastapi
 Requires-Dist: uvicorn
 Requires-Dist: sqlalchemy[asyncio]

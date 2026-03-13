@@ -4,10 +4,13 @@ version = "0.1.0"
 description = "AI-powered Multi-Agent Marketing Automation Framework"
 requires-python = ">=3.12"
 dependencies = [
-    "langgraph",
-    "langchain",
-    "langchain-ollama",
-    "pydantic-settings",
+    "langgraph>=1.1",
+    "langchain>=1.2",
+    "langchain-core>=1.2",
+    "langchain-community>=0.4",
+    "langchain-ollama>=1.0",
+    "ddgs>=9.0",
+    "pydantic-settings>=2.13",
     "fastapi",
     "uvicorn",
     "sqlalchemy[asyncio]",

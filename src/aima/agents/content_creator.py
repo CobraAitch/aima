@@ -1,7 +1,4 @@
-from click import prompt
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
-
-from aima.agents.campaign_planner import SYSTEM_PROMPT
 from aima.agents.state import CampaignState
 from aima.llm.factory import create_llm
 from aima.models.content import GeneratedContent
