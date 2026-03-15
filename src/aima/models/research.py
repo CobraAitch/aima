@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class CompetitorInfo(BaseModel):
     name: str
     strengths: list[str]

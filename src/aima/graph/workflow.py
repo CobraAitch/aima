@@ -1,18 +1,25 @@
-from langgraph.graph import StateGraph, START, END
+import logging
+
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from aima.agents.campaign_planner import plan_campaign
 from aima.agents.content_creator import create_content
 from aima.agents.research import research_market
-from aima.agents.strategy import create_strategy
 from aima.agents.state import CampaignState
+from aima.agents.strategy import create_strategy
 
-def build_graph() -> StateGraph:
-    """Build the multi-agent campaign workflow.
+log = logging.getLogger(__name__)
 
-    Flow: START -> research -> strategy -> planner -> content -> END
 
-    Each agent reads from and writes to the shared CampaignState.
-    Research informs strategy, strategy informs the final plan.
+def build_graph() -> CompiledStateGraph:  # type: ignore[type-arg]
+    """Assembles the multi-agent campaign workflow.
+
+    Pipeline: research -> strategy -> planner -> content
+
+    Each node reads from shared CampaignState and returns a
+    partial state update. Research feeds strategy, strategy
+    feeds the planner, planner feeds content generation.
     """
     graph = StateGraph(CampaignState)
 
@@ -27,4 +34,5 @@ def build_graph() -> StateGraph:
     graph.add_edge("planner", "content")
     graph.add_edge("content", END)
 
+    log.info("workflow graph compiled")
     return graph.compile()

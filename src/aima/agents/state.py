@@ -1,16 +1,20 @@
-from typing import Annotated
+from typing import Annotated, TypedDict
 
-from langgraph.graph import add_messages
 from langchain_core.messages import BaseMessage
-from pydantic import BaseModel
+from langgraph.graph import add_messages
 
+from aima.config import CampaignStatus
 from aima.models.campaign import CampaignBrief, CampaignPlan
+from aima.models.content import GeneratedContent
+from aima.models.research import MarketResearch
+from aima.models.strategy import MarketingStrategy
 
-class CampaignState(BaseModel):
+
+class CampaignState(TypedDict, total=False):
     messages: Annotated[list[BaseMessage], add_messages]
     brief: CampaignBrief
-    research: str = ""
-    strategy: str = ""
-    plan: CampaignPlan | None = None
-    content: list[str] = []
-    status: str = "pending"
+    research: MarketResearch | None
+    strategy: MarketingStrategy | None
+    plan: CampaignPlan | None
+    content: GeneratedContent | None
+    status: CampaignStatus

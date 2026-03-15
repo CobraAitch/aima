@@ -1,34 +1,67 @@
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+import logging
+from typing import cast
+
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
 from aima.agents.state import CampaignState
+from aima.config import CampaignStatus, settings
 from aima.llm.factory import create_llm
 from aima.models.content import GeneratedContent
 
-SYSTEM_PROMPT = """You are a creative content specialist.
-Based on the campaign brief, research, and strategy, generate ready-to-publish
-marketing content including social media posts, ad copy, and email subject lines.
-Make content platform-specific and aligned with the brand voice.
-Keep posts concise and engaging."""
+log = logging.getLogger(__name__)
 
-def create_content(state: CampaignState) -> dict:
-    """Content creator agent node.
+SYSTEM_PROMPT = (
+    "You are a creative content specialist. Generate ready-to-publish "
+    "marketing content.\n"
+    "You MUST populate ALL of the following fields:\n"
+    "- social_media_posts: list of 3 posts, each with platform "
+    "(Instagram/LinkedIn/Twitter), post_type, text, hashtags (list), "
+    "cta (call to action)\n"
+    "- ad_copies: list of 2 ads, each with headline, body, cta, "
+    "target_audience\n"
+    "- email_subject_lines: list of 5 compelling email subjects\n"
+    "- key_talking_points: list of 5 key talking points\n"
+    "Keep posts concise, platform-specific, and engaging."
+)
 
-    Generates platform-specific marketing content based on
-    the research, strategy, and campaign plan.
-    """
-    llm = create_llm(temperature=0.8)
-    structured_llm = llm.with_structured_output(GeneratedContent)
+MAX_RETRIES = 2
 
-    brief = state.brief
+
+def _truncate(text: str, limit: int | None = None) -> str:
+    """Word-boundary truncation so we don't blow up prompt length."""
+    if limit is None:
+        limit = settings.content_context_limit
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)
+    return (cut[0] if len(cut) > 1 else text[:limit]) + "..."
+
+
+def create_content(state: CampaignState) -> dict[str, object]:
+    """Generates platform-specific marketing content."""
+    brief = state["brief"]
+    research = state.get("research")
+    strategy = state.get("strategy")
+
     prompt = (
         f"Product: {brief.product}\n"
         f"Goal: {brief.goal}\n"
         f"Market: {brief.market}\n\n"
     )
 
-    if state.research:
-        prompt += f"Research:\n{state.research[:500]}\n\n"
-    if state.strategy:
-        prompt += f"Strategy: {state.strategy[:500]}\n\n"
+    if research:
+        research_text = (
+            f"Overview: {research.market_overview}\n"
+            f"Trends: {', '.join(research.trends)}"
+        )
+        prompt += f"Research:\n{_truncate(research_text)}\n\n"
+
+    if strategy:
+        strategy_text = (
+            f"Positioning: {strategy.positioning}\n"
+            f"Value Proposition: {strategy.value_proposition}"
+        )
+        prompt += f"Strategy:\n{_truncate(strategy_text)}\n\n"
 
     prompt += (
         "Generate:\n"
@@ -38,17 +71,28 @@ def create_content(state: CampaignState) -> dict:
         "- 5 key talking points"
     )
 
-    content = structured_llm.invoke([
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=prompt),
-    ])
+    log.info("generating content for %s", brief.product)
 
-    return {
-        "content": [post.text for post in content.social_media_posts],
-        "status": "content_created",
-        "messages": [AIMessage(
-            content=f"Content created: {len(content.social_media_posts)} posts, "
-                    f"{len(content.ad_copies)} ads, "
-                    f"{len(content.email_subject_lines)} email subjects"
-        )]
-    }
+    last_error: Exception | None = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            llm = create_llm(temperature=settings.temperature_content)
+            structured_llm = llm.with_structured_output(GeneratedContent)
+            content = cast(GeneratedContent, structured_llm.invoke([
+                SystemMessage(content=SYSTEM_PROMPT),
+                HumanMessage(content=prompt),
+            ]))
+            return {
+                "content": content,
+                "status": CampaignStatus.COMPLETED,
+                "messages": [AIMessage(
+                    content=f"Content done: {len(content.social_media_posts)} posts, "
+                            f"{len(content.ad_copies)} ads"
+                )],
+            }
+        except Exception as exc:
+            last_error = exc
+            log.warning("content attempt %d/%d failed: %s", attempt, MAX_RETRIES, exc)
+
+    msg = f"Content agent failed after {MAX_RETRIES} attempts"
+    raise RuntimeError(msg) from last_error
